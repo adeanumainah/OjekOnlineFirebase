@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.dean.ojekonlinefirebase.R
+import com.dean.ojekonlinefirebase.activity.WaitingDriverActivity
 import com.dean.ojekonlinefirebase.model.Booking
 import com.dean.ojekonlinefirebase.model.ResultRoute
 import com.dean.ojekonlinefirebase.model.RoutesItem
@@ -56,9 +57,14 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.fragment_home.*
+import okhttp3.ResponseBody
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import org.jetbrains.anko.support.v4.alert
+import org.jetbrains.anko.support.v4.startActivity
 import org.jetbrains.anko.support.v4.toast
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.lang.Exception
 import java.lang.StringBuilder
 import java.util.*
@@ -83,7 +89,10 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_home, container, false)
+        val view =  inflater.inflate(R.layout.fragment_home, container, false)
+        auth = FirebaseAuth.getInstance()
+
+        return view
     }
 
     //utk menamplkan map ke fragment
@@ -106,6 +115,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
         showPermission()
         visibleView(false)
+
         keyy?.let { bookingHistoryUser(it) }
 
         tv_home_awal.onClick {
@@ -232,7 +242,21 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     request.token = token
                     request.sendNotificationModel = booking
 
-//                    NetworkModule.getServiceFcm().sendNotificationModel
+                    NetworkModule.getServiceFcm().sendChatNotification(request)
+                        .enqueue(object : Callback<ResponseBody>{
+                            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+
+                                Log.d("network failed :", t.message.toString())
+                            }
+
+                            override fun onResponse(
+                                call: Call<ResponseBody>,
+                                response: Response<ResponseBody>
+                            ) {
+                                Log.d("response server", response.message())
+                            }
+
+                        })
                 }
             }
 
@@ -444,7 +468,45 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         mapView?.onLowMemory()
     }
 
-    private fun bookingHistoryUser(it: String): Any {
-        TODO("Not yet implemented")
+    private fun bookingHistoryUser(key: String) {
+        showDialog(true)
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference(Constan.tb_booking)
+
+        myRef.child(key).addValueEventListener(object: ValueEventListener{
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val booking = snapshot.getValue(Booking::class.java)
+                if (booking?.driver != ""){
+                    startActivity<WaitingDriverActivity>(Constan.key to key)
+                    showDialog(false)
+                }
+            }
+
+        })
+    }
+
+    private fun showDialog(status: Boolean) {
+        dialog = this!!.activity?.let { Dialog(it) }
+        dialog?.setContentView(R.layout.dialog_waiting_driver)
+
+        if (status){
+            dialog?.show()
+        } else dialog?.dismiss()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == 1){
+            showGPS()
+        }
     }
 }

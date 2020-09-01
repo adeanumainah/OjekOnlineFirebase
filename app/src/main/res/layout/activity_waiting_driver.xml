@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeFragment">
 
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/mapView"
+    <fragment
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:id="@+id/fm_map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"/>
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/cv1"
+        android:id="@+id/cv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardCornerRadius="@dimen/_10dp"
@@ -36,7 +38,7 @@
                     android:src="@drawable/pin" />
 
                 <TextView
-                    android:id="@+id/tv_home_awal"
+                    android:id="@+id/tv_home_awal_waiting_driver"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_10dp"
@@ -67,7 +69,7 @@
                     android:src="@drawable/placeholder" />
 
                 <TextView
-                    android:id="@+id/tv_home_tujuan"
+                    android:id="@+id/tv_home_tujuan_waiting_driver"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_10dp"
@@ -112,7 +114,7 @@
             </LinearLayout>
 
             <TextView
-                android:id="@+id/tv_home_price"
+                android:id="@+id/tv_home_price_waiting_driver"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/_25dp"
@@ -139,14 +141,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="@dimen/_5dp"
-                    android:text="@string/estimasi_waktu"
+                    android:text="@string/nama_driver"
                     android:textSize="@dimen/_15sp"
                     android:textStyle="bold" />
 
             </LinearLayout>
 
             <TextView
-                android:id="@+id/tv_home_waktu_distance"
+                android:id="@+id/tv_home_name_driver"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/_20dp"
@@ -157,14 +159,13 @@
     </androidx.cardview.widget.CardView>
 
     <Button
-        android:id="@+id/btn_home_next"
+        android:id="@+id/btn_home_home"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_60dp"
         android:layout_alignParentBottom="true"
-        android:text="@string/pesan"
+        android:text="@string/title_home"
         android:textAllCaps="false"
         android:background="@color/colorPrimary"
-        android:layout_marginBottom="@dimen/_60dp"
         android:textColor="@android:color/white" />
 
 </RelativeLayout>

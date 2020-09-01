@@ -73,7 +73,6 @@ class LoginActivity : AppCompatActivity() {
             }
     }
 
-    //todo 5
     //request sign in gmail/gugel
     private fun signIn(){
         val gson = GoogleSignInOptions
@@ -105,7 +104,7 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    //todo 7
+
     //autentication firebase sign in
     private fun firebaseAuthWithGoogle(account: GoogleSignInAccount?) {
 

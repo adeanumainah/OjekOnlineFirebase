@@ -33,4 +33,6 @@
     <string name="_3_menit">3 menit</string>
     <string name="pesan">Pesan</string>
     <string name="title_activity_maps">Map</string>
+    <string name="nama_driver">nama driver</string>
+    <string name="tunggu_driver_yang_ambil_ya">Tunggu Driver yang ambil ya..</string>
 </resources>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OjekOnlineFirebase</string>
+    <string name="app_name">OjekOnlineDriver</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
@@ -35,4 +35,10 @@
     <string name="title_activity_maps">Map</string>
     <string name="nama_driver">nama driver</string>
     <string name="tunggu_driver_yang_ambil_ya">Tunggu Driver yang ambil ya..</string>
+    <string name="request">request</string>
+    <string name="handle">handle</string>
+    <string name="complete">complete</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="take_booking">take booking</string>
 </resources>

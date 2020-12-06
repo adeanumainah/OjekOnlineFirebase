@@ -31,6 +31,7 @@ import com.dean.ojekonlinefirebase.network.NetworkModule
 import com.dean.ojekonlinefirebase.network.RequestNotification
 import com.dean.ojekonlinefirebase.utils.ChangeFormat
 import com.dean.ojekonlinefirebase.utils.Constan
+import com.dean.ojekonlinefirebase.utils.DirectionMapsV2
 import com.dean.ojekonlinefirebase.utils.GPSTrack
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
@@ -72,6 +73,7 @@ import java.util.*
 class HomeFragment : Fragment(), OnMapReadyCallback {
 
     var map: GoogleMap? = null
+
     var tanggal: String? = null
     var latAwal: Double? = null
     var lonAwal: Double? = null
@@ -95,23 +97,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         return view
     }
 
-    //utk menamplkan map ke fragment
-    override fun onMapReady(p0: GoogleMap?) {
-        map = p0
-        map?.uiSettings?.isMyLocationButtonEnabled = false
-        map?.moveCamera(
-            CameraUpdateFactory.newLatLngZoom(
-                LatLng(-6.3088652, 106.682188), 12f
-            )
-        )
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         //menginisialisasi dari mapsView
         mapView.onCreate(savedInstanceState)
-        mapView.getMapAsync { this }
+        mapView.getMapAsync (this)
 
         showPermission()
         visibleView(false)
@@ -127,7 +118,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
 
         btn_home_next.onClick {
-            if (tv_home_awal?.text?.isNotEmpty()!!
+            if (tv_home_awal.text.isNotEmpty()!!
                 && tv_home_tujuan.text.isNotEmpty()
             ) {
                 insertServer()
@@ -143,34 +134,25 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun showPermission() {
-        showGPS()
+    private fun bookingHistoryUser(key: String) {
+        showDialog(true)
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference(Constan.tb_booking)
 
-        if (activity?.let {
-                ContextCompat.checkSelfPermission(
-                    it,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-                )
-            } != PackageManager.PERMISSION_GRANTED) {
+        myRef.child(key).addValueEventListener(object: ValueEventListener{
+            override fun onCancelled(error: DatabaseError) {
 
-            if (activity?.let {
-                    ActivityCompat.shouldShowRequestPermissionRationale(
-                        it,
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                }!!) {
-
-                showGPS()
-
-            } else {
-                requestPermissions(
-                    arrayOf(
-                        android.Manifest.permission.ACCESS_FINE_LOCATION,
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION
-                    ), 1
-                )
             }
-        }
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val booking = snapshot.getValue(Booking::class.java)
+                if (booking?.driver != ""){
+                    startActivity<WaitingDriverActivity>(Constan.key to key)
+                    showDialog(false)
+                }
+            }
+
+        })
     }
 
     //insert data booking ke database
@@ -191,10 +173,10 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         lokasiAwal: String,
         latAwal: Double?,
         lonAwal: Double?,
-        lokasiTujuan: String?,
+        lokasiTujuan: String,
         latTujuan: Double?,
         lonTujuan: Double?,
-        harga: String?,
+        harga: String,
         jarak: String
     ): Boolean {
 
@@ -253,6 +235,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                                 call: Call<ResponseBody>,
                                 response: Response<ResponseBody>
                             ) {
+                                response.body()
                                 Log.d("response server", response.message())
                             }
 
@@ -263,6 +246,44 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         })
     }
 
+    private fun showDialog(status: Boolean) {
+        dialog = this!!.activity?.let { Dialog(it) }
+        dialog?.setContentView(R.layout.dialog_waiting_driver)
+
+        if (status){
+            dialog?.show()
+        } else dialog?.dismiss()
+    }
+
+    private fun showPermission() {
+        showGPS()
+
+        if (activity?.let {
+                ContextCompat.checkSelfPermission(
+                    it,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            } != PackageManager.PERMISSION_GRANTED) {
+
+            if (activity?.let {
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        it,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                }!!) {
+
+                showGPS()
+
+            } else {
+                requestPermissions(
+                    arrayOf(
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION
+                    ), 1
+                )
+            }
+        }
+    }
 
     //utk menampilkan lokasi user
     private fun showGPS() {
@@ -270,49 +291,14 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
         if (gps?.canGetLocation()!!) {
             latAwal = gps.latitude
-            lonAwal = gps.latitude
+            lonAwal = gps.longitude
 
-            showMarker(latAwal ?: 0.0, lonAwal ?: 0.0, "My Location")
+            showMainMarker(latAwal ?: 0.0, lonAwal ?: 0.0, "My Location")
             val name = showName(latAwal ?: 0.0, lonAwal ?: 0.0)
 
             tv_home_awal.text = name
 
         } else gps.showSettingGPS()
-    }
-
-    @SuppressLint("CheckResult")
-    private fun route() {
-        val origin = latAwal.toString() + "," + lonAwal.toString()
-        val dest = latAkhir.toString() + "," + lonAkhir.toString()
-
-        NetworkModule.getService().actionRoute(origin, dest, Constan.API_KEY)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeOn(Schedulers.io())
-            .subscribe({ t: ResultRoute? ->
-                showData(t?.routes)
-            }, {})
-    }
-
-    private fun showData(routes: List<RoutesItem?>?) {
-        visibleView(true)
-
-        if (routes != null) {
-            val point = routes[0]?.overviewPolyline?.points
-            jarak = routes[0]?.legs?.get(0)?.distance?.text
-            val jarakValue = routes[0]?.legs?.get(0)?.distance?.value
-            val waktu = routes[0]?.legs?.get(0)?.duration?.text
-
-            tv_home_waktu_distance.text = waktu + "(" + jarak + ")"
-            val pricex = jarakValue?.toDouble()?.let { Math.round(it) }
-            val price = pricex?.div(1000.0)?.times(2000.0)
-            val price2 = ChangeFormat.toRupiahFormat2(price.toString())
-
-            tv_home_price.text = "Rp, " + price2
-        } else {
-            alert {
-                message = "data route null"
-            }.show()
-        }
     }
 
     private fun visibleView(status: Boolean) {
@@ -368,7 +354,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     place?.address.toString()
                 )
 
-                Log.i("location", "place" + place?.name)
+                Log.i("location", "place : " + place?.name)
             } else if (resultCode == AutocompleteActivity.RESULT_ERROR) {
                 val status = data?.let { Autocomplete.getStatusFromIntent(it) }
 
@@ -384,7 +370,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 lonAkhir = place?.latLng?.longitude
 
                 tv_home_tujuan.text = place?.address.toString()
-                showMarker(latAkhir ?: 0.0, lonAkhir ?: 0.0, place?.address.toString())
+                showMarker(latAkhir ?: 0.0, lonAwal ?: 0.0, place?.address.toString())
 
                 route()
                 Log.i("location", "place" + place?.name)
@@ -395,6 +381,43 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             } else if (resultCode == RESULT_CANCELED) {
 
             }
+        }
+    }
+
+    @SuppressLint("CheckResult")
+    private fun route() {
+        val origin = latAwal.toString() + "," + lonAwal.toString()
+        val dest = latAkhir.toString() + "," + lonAkhir.toString()
+
+        NetworkModule.getService().actionRoute(origin, dest, Constan.API_KEY)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
+            .subscribe({ t: ResultRoute? ->
+                showData(t?.routes)
+            }, {})
+    }
+
+    private fun showData(routes: List<RoutesItem?>?) {
+        visibleView(true)
+
+        if (routes != null) {
+            val point = routes[0]?.overviewPolyline?.points
+            jarak = routes[0]?.legs?.get(0)?.distance?.text
+            val jarakValue = routes[0]?.legs?.get(0)?.distance?.value
+            val waktu = routes[0]?.legs?.get(0)?.duration?.text
+
+            tv_home_waktu_distance.text = waktu + "(" + jarak + ")"
+            val pricex = jarakValue?.toDouble()?.let { Math.round(it) }
+            val price = pricex?.div(1000.0)?.times(2000.0)
+            val price2 = ChangeFormat.toRupiahFormat2(price.toString())
+
+            tv_home_price.text = "Rp, " + price2
+            DirectionMapsV2.gambarRoute(map!!, point!!)
+
+        } else {
+            alert {
+                message = "data route null"
+            }.show()
         }
     }
 
@@ -447,6 +470,17 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         map?.moveCamera(CameraUpdateFactory.newLatLng(coordinat))
     }
 
+    //utk menamplkan map ke fragment
+    override fun onMapReady(p0: GoogleMap?) {
+        map = p0
+        map?.uiSettings?.isMyLocationButtonEnabled = false
+        map?.moveCamera(
+            CameraUpdateFactory.newLatLngZoom(
+                LatLng(-6.3088652, 106.682188), 12f
+            )
+        )
+    }
+
     override fun onResume() {
         keyy?.let { bookingHistoryUser(it) }
         mapView?.onResume()
@@ -468,35 +502,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         mapView?.onLowMemory()
     }
 
-    private fun bookingHistoryUser(key: String) {
-        showDialog(true)
-        val database = FirebaseDatabase.getInstance()
-        val myRef = database.getReference(Constan.tb_booking)
-
-        myRef.child(key).addValueEventListener(object: ValueEventListener{
-            override fun onCancelled(error: DatabaseError) {
-
-            }
-
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val booking = snapshot.getValue(Booking::class.java)
-                if (booking?.driver != ""){
-                    startActivity<WaitingDriverActivity>(Constan.key to key)
-                    showDialog(false)
-                }
-            }
-
-        })
-    }
-
-    private fun showDialog(status: Boolean) {
-        dialog = this!!.activity?.let { Dialog(it) }
-        dialog?.setContentView(R.layout.dialog_waiting_driver)
-
-        if (status){
-            dialog?.show()
-        } else dialog?.dismiss()
-    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

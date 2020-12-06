@@ -16,11 +16,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.iid.FirebaseInstanceId
 import kotlinx.android.synthetic.main.activity_login.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import org.jetbrains.anko.startActivity
@@ -151,12 +153,21 @@ class LoginActivity : AppCompatActivity() {
     }
 
     //menambahkan data user ke realtima databse
-    private fun insertUser(name: String, email: String, hp: String, idUser: String?): Boolean {
+    private fun insertUser(name: String, email: String, hp: String, uid: String?): Boolean {
+
+        val token = FirebaseInstanceId.getInstance().token
+
         val user = Users()
         user.email = email
         user.name = name
         user.hp = hp
-        user.uid = auth?.uid
+        user.uid = uid
+
+        user.active = true
+        user.token = token
+        user.latitude = "0.0"
+        user.longitude = "0.0"
+
 
         val database = FirebaseDatabase.getInstance()
         val key = database.reference.push().key

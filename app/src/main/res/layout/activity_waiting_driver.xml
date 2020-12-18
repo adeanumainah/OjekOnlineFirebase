@@ -85,8 +85,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/cv_home_bottom"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/btn_home_next">
+        android:layout_height="wrap_content">
 
         <LinearLayout
             android:layout_width="match_parent"
